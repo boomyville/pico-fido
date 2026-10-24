@@ -1,0 +1,43 @@
+diff --git a/src/main.c b/src/main.c
+index 7a910ac..bc7e957 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -27,6 +27,7 @@
+ #include "driver/gpio.h"
+ #include "rom/gpio.h"
+ #include "tinyusb.h"
++#include "../../src/fido/fp_zw101.h"
+ #elif defined(PICO_PLATFORM)
+ #include "bsp/board.h"
+ #include "hardware/structs/ioqspi.h"
+@@ -188,6 +189,30 @@ int main(void) {
+ 
+     led_init();
+ 
++#ifdef ESP_PLATFORM
++    // --- FINGERPRINT ENROLLMENT WINDOW ---
++    if (fp_zw101_init(7, 8)) {
++        uint8_t enrolled = fp_zw101_get_enrolled_count();
++        if (enrolled < 2) {
++            printf("ZW101: %d fingerprint(s) enrolled. Place a NEW finger within 5 minutes to enroll slot %d...\n",
++                   enrolled, enrolled);
++            fp_result_t r = fp_zw101_enroll(enrolled);
++            if (r == FP_MATCH_OK) {
++                fp_zw101_set_enrolled_count(enrolled + 1);
++                printf("ZW101: enrollment slot %d stored successfully. (%d/2 enrolled)\n",
++                       enrolled, enrolled + 1);
++            } else {
++                printf("ZW101: enrollment window closed, no finger enrolled this boot (result=%d)\n", r);
++            }
++        } else {
++            printf("ZW101: %d fingerprints already enrolled, enrollment window disabled.\n", enrolled);
++        }
++    } else {
++        printf("ZW101: UART init FAILED\n");
++    }
++    // --- END FINGERPRINT ENROLLMENT WINDOW ---
++#endif
++
+     usb_init();
+ 
+ #ifndef ENABLE_EMULATION
