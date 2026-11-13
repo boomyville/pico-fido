@@ -24,6 +24,7 @@
 #include "hid/ctap_hid.h"
 #include "fido.h"
 #include "files.h"
+#include "fp_zw101.h"
 #include "crypto_utils.h"
 #include "apdu.h"
 #include "cbor_make_credential.h"
@@ -326,6 +327,14 @@ int cbor_get_assertion(const uint8_t *data, size_t len, bool next) {
             }
             else {
                 up = true;
+            }
+        }
+
+        // Fingerprint gate. Silent probes (up=false) never wait: they only work while unlocked.
+        if (fp_zw101_is_armed()) {
+            bool fp_silent = (options.present && options.up == pfalse);
+            if (!fp_zw101_wait_unlocked(fp_silent ? 0 : FP_GATE_WAIT_MS)) {
+                CBOR_ERROR(CTAP2_ERR_OPERATION_DENIED);
             }
         }
 

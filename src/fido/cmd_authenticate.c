@@ -23,6 +23,8 @@
 #include "files.h"
 #include "credential.h"
 
+#include "fp_zw101.h"
+
 int cmd_authenticate(void) {
     CTAP_AUTHENTICATE_REQ *req = (CTAP_AUTHENTICATE_REQ *) apdu.data;
     CTAP_AUTHENTICATE_RESP *resp = (CTAP_AUTHENTICATE_RESP *) res_APDU;
@@ -38,6 +40,9 @@ int cmd_authenticate(void) {
         return SW_INCORRECT_P1P2();
     }
     if ((get_opts() & FIDO2_OPT_AUV) || (file_has_data(ef_pin) && !keydev_unlocked)) {
+        return SW_CONDITIONS_NOT_SATISFIED();
+    }
+    if (P1(apdu) == CTAP_AUTH_ENFORCE && fp_zw101_is_armed() && !fp_zw101_wait_unlocked(FP_GATE_WAIT_MS)) {
         return SW_CONDITIONS_NOT_SATISFIED();
     }
     if (P1(apdu) == CTAP_AUTH_ENFORCE && wait_button_pressed() > 0) {

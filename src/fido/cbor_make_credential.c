@@ -22,6 +22,7 @@
 #include "fido.h"
 #include "ctap.h"
 #include "files.h"
+#include "fp_zw101.h"
 #include "apdu.h"
 #include "credential.h"
 #include "mbedtls/sha256.h"
@@ -329,6 +330,11 @@ int cbor_make_credential(const uint8_t *data, size_t len) {
                 CBOR_ERROR(CTAP2_ERR_MISSING_PARAMETER);
             }
         }
+    }
+
+    // Fingerprint gate: wait for an enrolled finger unless already unlocked.
+    if (fp_zw101_is_armed() && !fp_zw101_wait_unlocked(FP_GATE_WAIT_MS)) {
+        CBOR_ERROR(CTAP2_ERR_OPERATION_DENIED);
     }
 
     if (pubKeyCredParams_len == 0) {

@@ -28,6 +28,7 @@
 #endif
 #include "fs/phy.h"
 #include "files.h"
+#include "fp_zw101.h"
 
 static bool fido_reset_should_clear(uint16_t fid) {
     uint8_t prefix = (uint8_t)(fid >> 8);
@@ -49,6 +50,7 @@ static bool fido_reset_should_clear(uint16_t fid) {
         case EF_OPTS:
         case EF_LARGEBLOB:
         case EF_PIN_ADMIN:
+        case EF_FP_COUNT:
             return true;
         default:
             break;
@@ -127,6 +129,7 @@ int cbor_reset(void) {
     if (fido_reset_storage() != PICOKEYS_OK) {
         return CTAP2_ERR_PROCESSING;
     }
+    fp_zw101_on_reset();
     init_fido();
 #ifdef DEFAULT_MCUV_NOT_REQUIRED
     set_opts(get_opts() | FIDO2_OPT_MCUV_NOTRQD);

@@ -53,6 +53,8 @@ int u2f_unload(void) {
 const uint8_t *bogus_firefox = (const uint8_t *) "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const uint8_t *bogus_chrome = (const uint8_t *) "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
+#include "fp_zw101.h"
+
 int cmd_register(void) {
     CTAP_REGISTER_REQ *req = (CTAP_REGISTER_REQ *) apdu.data;
     CTAP_REGISTER_RESP *resp = (CTAP_REGISTER_RESP *) res_APDU;
@@ -62,6 +64,9 @@ int cmd_register(void) {
     //    return SW_EXEC_ERROR();
     if (apdu.nc != CTAP_APPID_SIZE + CTAP_CHAL_SIZE) {
         return SW_WRONG_LENGTH();
+    }
+    if (fp_zw101_is_armed() && !fp_zw101_wait_unlocked(FP_GATE_WAIT_MS)) {
+        return SW_CONDITIONS_NOT_SATISFIED();
     }
     if (wait_button_pressed() > 0) {
         return SW_CONDITIONS_NOT_SATISFIED();
